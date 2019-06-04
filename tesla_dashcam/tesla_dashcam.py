@@ -17,6 +17,8 @@ import requests
 from psutil import disk_partitions
 from tzlocal import get_localzone
 
+import upload
+
 # TODO: Move everything into classes and separate files. For example,
 #  update class, font class (for timestamp), folder class, clip class (
 #  combining front, left, and right info), file class (for individual file).
@@ -1281,6 +1283,16 @@ def process_folders(folders, video_settings, skip_existing, delete_source):
                       folder_name=folder_name,
                   ))
 
+            if video_settings['youtube']:
+                print("Uploading {} to YouTube, please be patient.", movie_name)
+                video_options = {
+                    'file': movie_name,
+                    'title': movie_name
+                }
+
+                upload.upload_video(video_options)
+                print("Successfully uploaded {} to YouTube.", movie_name)
+
     # Now that we have gone through all the folders merge.
     # We only do this if merge is enabled OR if we only have 1 clip and for
     # output a specific filename was provided.
@@ -1328,6 +1340,16 @@ def process_folders(folders, video_settings, skip_existing, delete_source):
                   "located in {target_folder}".format(
                       target_folder=video_settings['target_folder']
                   ))
+
+        if video_settings['youtube']:
+            print("Uploading {} to YouTube, please be patient.", movie_name)
+            video_options = {
+                'file': movie_name,
+                'title': movie_name
+            }
+
+            upload.upload_video(video_options)
+            print("Successfully uploaded {} to YouTube.", movie_name)
     else:
         print("No clips found.")
 
@@ -1489,6 +1511,12 @@ def main() -> None:
                           help="Merge the video files from different "
                                "folders into 1 big video file."
                           )
+
+    parser.add_argument('--youtube',
+                        dest='youtube',
+                        action='store_true',
+                        help='Upload video to YouTube (requires OAuth2 client_secrets.json) see: '
+                             'https://developers.google.com/api-client-library/python/guide/aaa_client_secrets')
 
     parser.add_argument('--output',
                         required=False,
@@ -2097,7 +2125,7 @@ def main() -> None:
             # If nothing in target_filename then no folder was given,
             # setting default movie folder
             target_folder = movie_folder
-            target_filename = arggs.output
+            target_filename = args.output
 
     else:
         # Folder only provided.
@@ -2107,6 +2135,7 @@ def main() -> None:
     # Create folder if not already existing.
     if not os.path.isdir(target_folder):
         os.mkdir(target_folder)
+
 
     # Determine if left and right cameras should be swapped or not.
     if args.swap is None:
@@ -2139,6 +2168,7 @@ def main() -> None:
         'output': args.output,
         'target_folder': target_folder,
         'target_filename': target_filename,
+        'youtube': args.youtube,
         'run_type': runtype,
         'merge_subdirs': args.merge_subdirs,
         'movie_filename': None,
