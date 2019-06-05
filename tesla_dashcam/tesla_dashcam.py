@@ -1284,12 +1284,8 @@ def process_folders(folders, video_settings, skip_existing, delete_source):
                   ))
 
             if video_settings['youtube']:
-                print("Uploading {} to YouTube, please be patient.", movie_name)
-                video_options = {
-                    'file': movie_name,
-                    'title': movie_name
-                }
-
+                print("Uploading {} to YouTube, please be patient.".format(movie_name))
+                video_options = upload.VideoOptions(movie_name, movie_name)
                 upload.upload_video(video_options)
                 print("Successfully uploaded {} to YouTube.", movie_name)
 
@@ -1337,21 +1333,18 @@ def process_folders(folders, video_settings, skip_existing, delete_source):
         if movie_name is not None:
             print("Movie {base_name} has been created, enjoy.".format(
                 base_name=movie_name))
+
+            if video_settings['youtube']:
+                print("Uploading {} to YouTube, please be patient.".format(movie_name))
+                video_options = upload.VideoOptions(movie_name, movie_name)
+
+                upload.upload_video(video_options)
+                print("Successfully uploaded {} to YouTube.", movie_name)
         else:
             print("All folders have been processed, resulting movie files are "
                   "located in {target_folder}".format(
                       target_folder=video_settings['target_folder']
                   ))
-
-        if video_settings['youtube']:
-            print("Uploading {} to YouTube, please be patient.".format(movie_name))
-            video_options = {
-                'file': movie_name,
-                'title': movie_name
-            }
-
-            upload.upload_video(video_options)
-            print("Successfully uploaded {} to YouTube.", movie_name)
     else:
         print("No clips found.")
 

@@ -3,7 +3,6 @@ import http.client
 import httplib2
 import random
 import time
-import datetime
 import google.auth
 import google.oauth2
 import pickle
@@ -52,6 +51,16 @@ API_SERVICE_NAME = 'youtube'
 API_VERSION = 'v3'
 
 VALID_PRIVACY_STATUSES = ('public', 'private', 'unlisted')
+
+class VideoOptions:
+  description = 'Upload ' + time.strftime('%Y-%m-%d %H:%M:%S')
+  category = 22
+  privacyStatus = 'private'
+  keywords = ''
+
+  def __init__(self, file, title):
+    self.file = file
+    self.title = title
 
 def save_credentials(credentials):
   f = open("credentials.pkl", "wb")
@@ -156,21 +165,12 @@ def resumable_upload(request):
 
 
 def upload_video(video_options):
-  if video_options['title'] is None:
-    video_options['title'] = 'Upload ' + time.strftime('%Y-%m-%d %H:%M:%S')
-
-  if video_options['category'] is None:
-    video_options['category'] = '22'
-
-  if video_options['privacyStatus'] is None:
-    video_options['privacyStatus'] = "private"
-
-  if video_options['file'] is not None:
+  if video_options.file is not None:
     youtube = get_authenticated_service()
-    # try:
-    #   initialize_upload(youtube, args)
-    # except HttpError as e:
-    #   print('An HTTP error %d occurred:\n%s' % (e.resp.status, e.content))
+    try:
+      initialize_upload(youtube, video_options)
+    except HttpError as e:
+      print('An HTTP error %d occurred:\n%s' % (e.resp.status, e.content))
   else:
     exit('No file provided')
 
@@ -188,14 +188,9 @@ if __name__ == '__main__':
   parser.add_argument('--privacyStatus', choices=VALID_PRIVACY_STATUSES, help='Video privacy status.')
   args = parser.parse_args()
 
-  video_options = {
-    'title': args.title,
-    'file': args.file,
-    'description': args.description,
-    'category': args.category,
-    'keywords': args.keywords,
-    'privacyStatus': args.privacyStatus
-  }
-
+  video_options = VideoOptions(args.file, args.title)
+  video_options.description = args.description
+  video_options.keywords = args.keywords
+  video_options.privacyStatus = args.privacyStatus
 
   upload_video(video_options)
