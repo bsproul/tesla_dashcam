@@ -1,16 +1,19 @@
 import argparse
 import http.client
 import httplib2
-import os
 import random
 import time
+import datetime
+import google.auth
+import google.oauth2
+import pickle
+import os
 
-import google.oauth2.credentials
-import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from google_auth_oauthlib.flow import InstalledAppFlow
+
 
 
 # Explicitly tell the underlying HTTP transport library not to retry, since
@@ -50,11 +53,33 @@ API_VERSION = 'v3'
 
 VALID_PRIVACY_STATUSES = ('public', 'private', 'unlisted')
 
+def save_credentials(credentials):
+  f = open("credentials.pkl", "wb")
+  pickle.dump(credentials, f)
+  f.close()
+
+def load_credentials():
+  f = open("credentials.pkl", "rb")
+  credentials = pickle.load(f)
+  f.close()
+  return credentials
+
 
 # Authorize the request and store authorization credentials.
 def get_authenticated_service():
-  flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
-  credentials = flow.run_console()
+  if not os.path.exists("credentials.pkl"):
+    flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
+    credentials = flow.run_console()
+
+    save_credentials(credentials)
+
+  else:
+    credentials = load_credentials()
+
+    if credentials.expired:
+      credentials.refresh(google.auth.transport.requests.Request())
+      save_credentials(credentials)
+
   return build(API_SERVICE_NAME, API_VERSION, credentials = credentials)
 
 def initialize_upload(youtube, options):
@@ -137,15 +162,15 @@ def upload_video(video_options):
   if video_options['category'] is None:
     video_options['category'] = '22'
 
-  if video_options['privacy'] is None:
-    video_options['privacy'] = "private"
+  if video_options['privacyStatus'] is None:
+    video_options['privacyStatus'] = "private"
 
   if video_options['file'] is not None:
     youtube = get_authenticated_service()
-    try:
-      initialize_upload(youtube, args)
-    except HttpError as e:
-      print('An HTTP error %d occurred:\n%s' % (e.resp.status, e.content))
+    # try:
+    #   initialize_upload(youtube, args)
+    # except HttpError as e:
+    #   print('An HTTP error %d occurred:\n%s' % (e.resp.status, e.content))
   else:
     exit('No file provided')
 
@@ -160,7 +185,7 @@ if __name__ == '__main__':
       'See https://developers.google.com/youtube/v3/docs/videoCategories/list')
   parser.add_argument('--keywords', help='Video keywords, comma separated',
     default='')
-  parser.add_argument('--privacy', choices=VALID_PRIVACY_STATUSES, help='Video privacy status.')
+  parser.add_argument('--privacyStatus', choices=VALID_PRIVACY_STATUSES, help='Video privacy status.')
   args = parser.parse_args()
 
   video_options = {
@@ -169,7 +194,7 @@ if __name__ == '__main__':
     'description': args.description,
     'category': args.category,
     'keywords': args.keywords,
-    'privacy': args.privacy
+    'privacyStatus': args.privacyStatus
   }
 
 

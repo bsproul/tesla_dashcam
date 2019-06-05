@@ -1302,6 +1302,8 @@ def process_folders(folders, video_settings, skip_existing, delete_source):
            (len(folders) == 1 and
             video_settings['target_filename'] is not None):
 
+            print("Filename is {}".format(video_settings['target_filename']))
+
             if video_settings['movie_filename'] is not None:
                 movie_filename = video_settings['movie_filename']
             elif video_settings['target_filename'] is not None:
@@ -1342,7 +1344,7 @@ def process_folders(folders, video_settings, skip_existing, delete_source):
                   ))
 
         if video_settings['youtube']:
-            print("Uploading {} to YouTube, please be patient.", movie_name)
+            print("Uploading {} to YouTube, please be patient.".format(movie_name))
             video_options = {
                 'file': movie_name,
                 'title': movie_name
@@ -1520,7 +1522,6 @@ def main() -> None:
 
     parser.add_argument('--output',
                         required=False,
-                        default = movie_folder,
                         type=str,
                         help="R|Path/Filename for the new movie file. "
                              "Intermediate files will be stored in same "
@@ -2119,7 +2120,12 @@ def main() -> None:
 
     # Determine the target folder and filename.
     # If no extension then assume it is a folder.
-    if len(os.path.splitext(args.output)) > 1:
+
+    if args.output is None:
+        target_folder = movie_folder
+        target_filename = None
+
+    elif len(os.path.splitext(args.output)) > 1:
         target_folder, target_filename = os.path.split(args.output)
         if target_filename is None:
             # If nothing in target_filename then no folder was given,
